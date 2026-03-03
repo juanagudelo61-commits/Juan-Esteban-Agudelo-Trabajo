@@ -1,1 +1,8 @@
-
+4. Evaluación de Importancia de Características por Permutación
+El Problema: Tienes un modelo de "Caja Negra" (como un Gradient Boosting) ya entrenado y quieres explicar qué variables son realmente importantes. En lugar de usar la importancia nativa del modelo (que puede estar sesgada), debes implementar una función que calcule la "Importancia por Permutación", la cual mide cuánto cae el rendimiento del modelo cuando se desordenan aleatoriamente los valores de cada característica.
+Nombre de la función: analizar_importancia_permutacion
+Argumentos:
+modelo_entrenado (objeto de sklearn): Un modelo ya ajustado previamente.
+X_val (pd.DataFrame): Conjunto de datos de validación.
+y_val (pd.Series o np.ndarray): Etiquetas reales de validación.
+Tipo de objeto a devolver: pd.DataFrame (un DataFrame ordenado descendencialmente con las columnas y su respectiva pérdida de desempeño o importance score).
