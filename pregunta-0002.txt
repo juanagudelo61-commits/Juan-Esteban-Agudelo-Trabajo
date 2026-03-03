@@ -1,0 +1,7 @@
+2. Clasificación Multietiqueta con Relevancia Binaria
+El Problema: Una plataforma de noticias necesita etiquetar automáticamente sus artículos. A diferencia de la clasificación multiclase tradicional (donde un artículo pertenece a una sola categoría), aquí un mismo artículo puede ser de "Política", "Economía" y "Tecnología" simultáneamente. Debes implementar una estrategia de "Relevancia Binaria" que entrene un clasificador independiente para cada etiqueta.
+Nombre de la función: entrenar_clasificador_multietiqueta
+Argumentos:
+X (numpy.ndarray o pd.DataFrame): Matriz de características del texto (ej. vectores TF-IDF).
+Y (numpy.ndarray): Matriz binaria de etiquetas de forma (n_muestras, n_etiquetas).
+3. Tipo de objeto a devolver: sklearn.multiclass.OneVsRestClassifier (el objeto del modelo entrenado capaz de predecir múltiples etiquetas).
