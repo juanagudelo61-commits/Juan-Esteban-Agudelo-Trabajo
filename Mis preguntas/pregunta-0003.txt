@@ -1,1 +1,7 @@
-
+3. Ensamble por Apilamiento (Stacking) de Modelos Heterogéneos
+El Problema: Has entrenado varios modelos para predecir el riesgo crediticio, pero quieres mejorar la precisión combinando sus predicciones. Debes construir un ensamble de tipo "Stacking" que utilice un Bosque Aleatorio y una Máquina de Vectores de Soporte (SVM) como modelos base, y una Regresión Logística como "meta-modelo" para decidir la predicción final basándose en las salidas de los anteriores.
+Nombre de la función: construir_ensamble_stacking
+Argumentos:
+X (numpy.ndarray): Datos de entrenamiento.
+y (numpy.ndarray): Etiquetas de clase.
+Tipo de objeto a devolver: sklearn.ensemble.StackingClassifier (el ensamble completo ya entrenado).
