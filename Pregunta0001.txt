@@ -1,0 +1,9 @@
+1. Regresión de Mínimos Cuadrados Parciales (PLS) para Quimiometría
+El Problema: Trabajas en un laboratorio farmacéutico analizando espectros de luz para predecir la concentración de un principio activo. El dataset tiene cientos de variables (longitudes de onda) que están altamente correlacionadas entre sí, lo que hace que una regresión lineal estándar falle por multicolinealidad. Debes usar una técnica de reducción de dimensionalidad supervisada (PLS) para extraer componentes que maximicen la covarianza con la variable objetivo.
+Nombre de la función: ajustar_pls_quimiometria
+Argumentos:
+X (numpy.ndarray): Matriz de características (espectros).
+y (numpy.ndarray): Vector con la concentración real.
+n_componentes (int): Número de componentes latentes a extraer.
+2. Tipo de objeto a devolver: dict (debe contener el modelo entrenado, el coeficiente R 
+ y el Error Cuadrático Medio - MSE).
