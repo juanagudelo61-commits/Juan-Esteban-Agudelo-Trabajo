@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.metrics import mean_squared_error, r2_score
 
-def generar_caso_de_uso_preparar_datos():
+def generar_caso_de_uso_preparar_datos1():
     """
     Genera datos sintéticos aleatorios para probar la función de regresión PLS.
     Simula espectros de absorción y concentraciones químicas.
