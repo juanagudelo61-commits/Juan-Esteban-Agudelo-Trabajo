@@ -4,7 +4,7 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import SVC
 from sklearn.datasets import make_multilabel_classification
 
-def generar_caso_de_uso_preparar_datos():
+def generar_caso_de_uso_preparar_datos2():
     """
     Genera datos aleatorios para un problema de clasificación multietiqueta
     y devuelve el input y el output esperado (modelo entrenado).
