@@ -4,7 +4,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.inspection import permutation_importance
 from sklearn.datasets import make_classification
 
-def generar_caso_de_uso_preparar_datos():
+def generar_caso_de_uso_preparar_datos4():
     """
     Genera un modelo de 'Caja Negra' entrenado y un conjunto de validación
     para calcular la importancia de sus características por permutación.
