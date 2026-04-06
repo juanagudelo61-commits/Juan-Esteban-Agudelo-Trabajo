@@ -4,7 +4,7 @@ from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.datasets import make_classification
 
-def generar_caso_de_uso_preparar_datos():
+def generar_caso_de_uso_preparar_datos3():
     """
     Genera datos aleatorios para un problema de riesgo crediticio y 
     devuelve el ensamble de Stacking ya entrenado como output esperado.
