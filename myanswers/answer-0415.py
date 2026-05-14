@@ -1,44 +1,110 @@
 import pandas as pd
 import numpy as np
-from sklearn.cluster import KMeans
+import random
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, f1_score, classification_report
 
-def segmentar_productos(df, columnas_features):
+# =============================================================
+# 1. TU SOLUCIÓN (Misión cumplida con Imputación)
+# =============================================================
+def entrenar_clasificador_clientes(df: pd.DataFrame, target_col: str) -> tuple:
     """
-    Segmenta productos usando KMeans tras limpiar datos faltantes.
+    Construye, entrena y evalúa un Pipeline de clasificación.
     """
-    # 1. Crear copia para no afectar el DataFrame original
-    df_result = df.copy()
+    # Separar características (X) y objetivo (y)
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
 
-    # 2. Rellenar valores faltantes con la mediana de cada columna
-    for col in columnas_features:
-        mediana = df_result[col].median()
-        df_result[col] = df_result[col].fillna(mediana)
+    # Identificar tipos de columnas
+    num_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+    cat_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
 
-    # 3. Aplicar KMeans
-    # n_init='auto' es una buena práctica en versiones recientes de sklearn
-    kmeans = KMeans(n_clusters=3, random_state=42, n_init='auto')
+    # Pipeline para datos numéricos (Rellena vacíos y escala)
+    num_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='mean')),
+        ('scaler', StandardScaler())
+    ])
 
-    # Entrenamos y predecimos sobre las columnas seleccionadas
-    df_result['cluster'] = kmeans.fit_predict(df_result[columnas_features])
+    # Pipeline para datos categóricos (Rellena vacíos y codifica)
+    cat_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore'))
+    ])
 
-    # 4. Calcular el promedio del precio por cada cluster
-    # Esto devuelve una Serie donde el índice es el número de cluster
-    promedios_precio = df_result.groupby('cluster')['precio'].mean()
+    # Unir ambos preprocesadores
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', num_transformer, num_cols),
+            ('cat', cat_transformer, cat_cols)
+        ]
+    )
 
-    # 5. Devolver tupla (DataFrame, Serie de promedios)
-    return df_result, promedios_precio
+    # Crear el Pipeline final
+    pipeline = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('classifier', RandomForestClassifier(random_state=42))
+    ])
 
-    # --- Ejecución de prueba ---
-if __name__ == "__main__":
-    # 1. Obtener datos del generador
-    inputs, (df_esperado, promedios_esperados) = generar_caso_de_uso_segmentar_productos()
+    # Separar en Entrenamiento (80%) y Prueba (20%)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
-    # 2. Llamar a tu función
-    # Nota: inputs es un diccionario con 'df' y 'columnas_features'
-    df_resultado, promedios_resultado = segmentar_productos(inputs['df'], inputs['columnas_features'])
+    # Entrenar el Pipeline completo
+    pipeline.fit(X_train, y_train)
 
-    # 3. Mostrar resultados
-    print("=== RESULTADO DE TU FUNCIÓN ===")
-    print(f"Promedios calculados:\n{promedios_resultado}")
-    print("\n¿Coinciden los promedios?:", np.allclose(promedios_resultado, promedios_esperados))
-    print("¿Coinciden las etiquetas de cluster?:", df_resultado['cluster'].equals(df_esperado['cluster']))
+    # Realizar predicciones para evaluar
+    y_pred = pipeline.predict(X_test)
+    
+    # Calcular métricas
+    metrics = {
+        'accuracy': accuracy_score(y_test, y_pred),
+        'f1_score': f1_score(y_test, y_pred, average='weighted'),
+        'classification_report': classification_report(y_test, y_pred)
+    }
+
+    return pipeline, metrics
+
+# =============================================================
+# 2. GENERADOR DE CASO DE USO (El código que te dieron)
+# =============================================================
+def generar_caso_de_uso_entrenar_clasificador_clientes():
+    n = random.randint(200, 600)
+    segmentos = random.choice([
+        ["bajo", "medio", "alto"],
+        ["riesgo_bajo", "riesgo_alto"],
+        ["A", "B", "C", "D"],
+    ])
+    regiones = random.sample(["norte", "sur", "este", "oeste", "centro"], k=random.randint(3, 5))
+    canales = random.sample(["online", "tienda", "telefono", "app"], k=random.randint(2, 4))
+    
+    df = pd.DataFrame({
+        "edad":             np.random.randint(18, 75, n),
+        "ingresos_anuales": np.random.uniform(15000, 120000, n).round(2),
+        "num_productos":    np.random.randint(1, 10, n),
+        "antiguedad_meses": np.random.randint(1, 120, n),
+        "region":           random.choices(regiones, k=n),
+        "canal_preferido":  random.choices(canales, k=n),
+        "segmento":         random.choices(segmentos, k=n),
+    })
+    
+    target_col = "segmento"
+    input_data = {"df": df.copy(), "target_col": target_col}
+
+    # Lógica interna para generar la salida esperada
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
+    numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+    categorical_cols = X.select_dtypes(include="object").columns.tolist()
+    preprocessor = ColumnTransformer([
+        ("num", Pipeline([("imputer", SimpleImputer(strategy="mean")), ("scaler", StandardScaler())]), numeric_cols),
+        ("cat", Pipeline([("imputer", SimpleImputer(strategy="most_frequent")), ("encoder", OneHotEncoder(handle_unknown="ignore"))]), categorical_cols),
+    ])
+    pipeline = Pipeline([("preprocessor", preprocessor), ("classifier", RandomForestClassifier(random_state=42))])
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    pipeline.fit(X
