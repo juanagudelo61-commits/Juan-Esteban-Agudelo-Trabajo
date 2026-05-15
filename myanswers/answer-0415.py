@@ -1,10 +1,10 @@
 def entrenar_clasificador_clientes(
     df,
-    target_col=None,
+    target_col='segmento',
     columnas_features=None
 ):
 
-    # Imports dentro de la función
+    # Imports
     import pandas as pd
     import numpy as np
 
@@ -16,15 +16,20 @@ def entrenar_clasificador_clientes(
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.metrics import accuracy_score, f1_score, classification_report
 
-    # Verificar target_col
-    if target_col is None or target_col not in df.columns:
+    # Si target_col llega como lista, realmente era columnas_features
+    if isinstance(target_col, list):
+        columnas_features = target_col
+        target_col = 'segmento'
+
+    # Si target no existe, usar última columna
+    if target_col not in df.columns:
         target_col = df.columns[-1]
 
-    # Separar X e y
-    X = df.drop(columns=[target_col])
+    # Separar variables
+    X = df.drop(columns=target_col)
     y = df[target_col]
 
-    # Seleccionar columnas específicas si las envían
+    # Filtrar columnas si las envían
     if columnas_features is not None:
         columnas_validas = [
             c for c in columnas_features
@@ -34,22 +39,21 @@ def entrenar_clasificador_clientes(
         if len(columnas_validas) > 0:
             X = X[columnas_validas]
 
-    # Detectar columnas
+    # Columnas numéricas y categóricas
     numeric_cols = X.select_dtypes(
         include=[np.number]
     ).columns.tolist()
 
     categorical_cols = X.select_dtypes(
-        include=["object", "category"]
+        include=['object', 'category']
     ).columns.tolist()
 
-    # Pipeline numérico
+    # Transformadores
     numeric_transformer = Pipeline(steps=[
         ("imputer", SimpleImputer(strategy="mean")),
         ("scaler", StandardScaler())
     ])
 
-    # Pipeline categórico
     categorical_transformer = Pipeline(steps=[
         ("imputer", SimpleImputer(strategy="most_frequent")),
         ("encoder", OneHotEncoder(handle_unknown="ignore"))
@@ -61,13 +65,13 @@ def entrenar_clasificador_clientes(
         ("cat", categorical_transformer, categorical_cols)
     ])
 
-    # Pipeline final
+    # Pipeline
     pipeline = Pipeline(steps=[
         ("preprocessor", preprocessor),
         ("classifier", RandomForestClassifier(random_state=42))
     ])
 
-    # División de datos
+    # División
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
