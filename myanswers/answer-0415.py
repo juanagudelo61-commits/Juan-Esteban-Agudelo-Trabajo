@@ -1,10 +1,10 @@
 def entrenar_clasificador_clientes(
     df,
-    target_col='segmento',
+    target_col=None,
     columnas_features=None
 ):
 
-    # IMPORTS DENTRO DE LA FUNCIÓN
+    # Imports dentro de la función
     import pandas as pd
     import numpy as np
 
@@ -16,7 +16,11 @@ def entrenar_clasificador_clientes(
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.metrics import accuracy_score, f1_score, classification_report
 
-    # 1. Separar variables
+    # Si no mandan target_col, usar la última columna
+    if target_col is None:
+        target_col = df.columns[-1]
+
+    # Variables predictoras y objetivo
     X = df.drop(columns=[target_col])
     y = df[target_col]
 
@@ -24,37 +28,38 @@ def entrenar_clasificador_clientes(
     if columnas_features is not None:
         X = X[columnas_features]
 
-    # 2. Detectar columnas
+    # Columnas numéricas y categóricas
     numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
 
     categorical_cols = X.select_dtypes(
         include=['object', 'category']
     ).columns.tolist()
 
-    # 3. Transformadores
+    # Pipeline numérico
     numeric_transformer = Pipeline(steps=[
         ("imputer", SimpleImputer(strategy="mean")),
         ("scaler", StandardScaler())
     ])
 
+    # Pipeline categórico
     categorical_transformer = Pipeline(steps=[
         ("imputer", SimpleImputer(strategy="most_frequent")),
         ("encoder", OneHotEncoder(handle_unknown="ignore"))
     ])
 
-    # 4. Preprocesamiento
+    # Preprocesador
     preprocessor = ColumnTransformer(transformers=[
         ("num", numeric_transformer, numeric_cols),
         ("cat", categorical_transformer, categorical_cols)
     ])
 
-    # 5. Modelo
+    # Modelo final
     pipeline = Pipeline(steps=[
         ("preprocessor", preprocessor),
         ("classifier", RandomForestClassifier(random_state=42))
     ])
 
-    # 6. División
+    # División entrenamiento/prueba
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
@@ -62,13 +67,13 @@ def entrenar_clasificador_clientes(
         random_state=42
     )
 
-    # 7. Entrenamiento
+    # Entrenar
     pipeline.fit(X_train, y_train)
 
-    # 8. Predicciones
+    # Predicción
     y_pred = pipeline.predict(X_test)
 
-    # 9. Métricas
+    # Métricas
     metrics = {
         "accuracy": accuracy_score(y_test, y_pred),
         "f1_score": f1_score(y_test, y_pred, average="weighted"),
