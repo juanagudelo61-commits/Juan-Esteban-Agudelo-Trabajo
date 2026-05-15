@@ -1,36 +1,78 @@
-def segmentar_productos(df, columnas_features):
+def entrenar_clasificador_clientes(
+    df,
+    target_col='segmento',
+    columnas_features=None
+):
 
-    # Imports dentro de la función
+    # IMPORTS DENTRO DE LA FUNCIÓN
     import pandas as pd
     import numpy as np
-    from sklearn.cluster import KMeans
 
-    # Copia del DataFrame para no modificar el original
-    df_resultado = df.copy()
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import StandardScaler, OneHotEncoder
+    from sklearn.impute import SimpleImputer
+    from sklearn.compose import ColumnTransformer
+    from sklearn.pipeline import Pipeline
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.metrics import accuracy_score, f1_score, classification_report
 
-    # 1. Rellenar valores faltantes con la mediana
-    for columna in columnas_features:
-        mediana = df_resultado[columna].median()
-        df_resultado[columna] = df_resultado[columna].fillna(mediana)
+    # 1. Separar variables
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
 
-    # 2. Aplicar KMeans
-    km = KMeans(
-        n_clusters=3,
-        random_state=42,
-        n_init='auto'
+    # Si envían columnas_features
+    if columnas_features is not None:
+        X = X[columnas_features]
+
+    # 2. Detectar columnas
+    numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+
+    categorical_cols = X.select_dtypes(
+        include=['object', 'category']
+    ).columns.tolist()
+
+    # 3. Transformadores
+    numeric_transformer = Pipeline(steps=[
+        ("imputer", SimpleImputer(strategy="mean")),
+        ("scaler", StandardScaler())
+    ])
+
+    categorical_transformer = Pipeline(steps=[
+        ("imputer", SimpleImputer(strategy="most_frequent")),
+        ("encoder", OneHotEncoder(handle_unknown="ignore"))
+    ])
+
+    # 4. Preprocesamiento
+    preprocessor = ColumnTransformer(transformers=[
+        ("num", numeric_transformer, numeric_cols),
+        ("cat", categorical_transformer, categorical_cols)
+    ])
+
+    # 5. Modelo
+    pipeline = Pipeline(steps=[
+        ("preprocessor", preprocessor),
+        ("classifier", RandomForestClassifier(random_state=42))
+    ])
+
+    # 6. División
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42
     )
 
-    # 3. Obtener clusters
-    df_resultado['cluster'] = km.fit_predict(
-        df_resultado[columnas_features]
-    )
+    # 7. Entrenamiento
+    pipeline.fit(X_train, y_train)
 
-    # 4. Calcular promedio de precio por cluster
-    promedios_precio = (
-        df_resultado
-        .groupby('cluster')['precio']
-        .mean()
-    )
+    # 8. Predicciones
+    y_pred = pipeline.predict(X_test)
 
-    # 5. Retornar resultado
-    return df_resultado, promedios_precio
+    # 9. Métricas
+    metrics = {
+        "accuracy": accuracy_score(y_test, y_pred),
+        "f1_score": f1_score(y_test, y_pred, average="weighted"),
+        "classification_report": classification_report(y_test, y_pred)
+    }
+
+    return pipeline, metrics
