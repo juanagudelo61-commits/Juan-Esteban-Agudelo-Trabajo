@@ -7,29 +7,30 @@ def segmentar_productos(df, columnas_features):
     # Copia del DataFrame
     df_resultado = df.copy()
 
-    # Rellenar valores faltantes con mediana
+    # Rellenar valores faltantes
     for col in columnas_features:
-        mediana = df_resultado[col].median()
-        df_resultado[col] = df_resultado[col].fillna(mediana)
+        df_resultado[col] = df_resultado[col].fillna(
+            df_resultado[col].median()
+        )
 
-    # Aplicar KMeans
+    # Crear modelo
     km = KMeans(
         n_clusters=3,
         random_state=42,
         n_init='auto'
     )
 
-    # Crear clusters
+    # Entrenar y predecir clusters
     df_resultado['cluster'] = km.fit_predict(
         df_resultado[columnas_features]
     )
 
-    # Promedio de precio por cluster
+    # Promedio del precio por cluster
     promedios_precio = (
         df_resultado
         .groupby('cluster')['precio']
         .mean()
     )
 
-    # Retornar DataFrame y Serie
-    return df_resultado, promedios_precio
+    # Retorno correcto
+    return (df_resultado, promedios_precio)
