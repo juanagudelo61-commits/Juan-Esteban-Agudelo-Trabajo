@@ -8,25 +8,21 @@ from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 
-# Cambiamos el orden: df primero, luego columnas_features, luego target_col
-def entrenar_clasificador_clientes(df, columnas_features=None, target_col='segmento'):
+def entrenar_clasificador_clientes(df, target_col, columnas_features=None):
     """
-    Firma reordenada para satisfacer al evaluador automático.
+    Versión dinámica: Usa 'target_col' directamente del argumento 
+    en lugar de escribir "segmento" como texto.
     """
-    # 1. Asegurarnos de tener el target_col correcto
-    # Si por alguna razón target_col llega vacío, usamos el valor por defecto
-    if target_col is None:
-        target_col = 'segmento'
-
-    # 2. Separar X e y
+    # 1. Separar X e y usando la variable dinámica target_col
+    # Esto evita el error "not found in axis"
     X = df.drop(columns=[target_col])
     y = df[target_col]
 
-    # 3. Identificar columnas por tipo
+    # 2. Identificar columnas por tipo automáticamente
     numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
     categorical_cols = X.select_dtypes(include=["object"]).columns.tolist()
 
-    # 4. Transformadores (Pipeline + ColumnTransformer)
+    # 3. Transformadores (Pipeline + ColumnTransformer)
     numeric_transformer = Pipeline(steps=[
         ("imputer", SimpleImputer(strategy="mean")),
         ("scaler", StandardScaler())
@@ -41,21 +37,21 @@ def entrenar_clasificador_clientes(df, columnas_features=None, target_col='segme
         ("cat", categorical_transformer, categorical_cols)
     ])
 
-    # 5. Pipeline final con RandomForest
+    # 4. Pipeline final
     pipeline = Pipeline(steps=[
         ("preprocessor", preprocessor),
         ("classifier", RandomForestClassifier(random_state=42))
     ])
 
-    # 6. Split de datos (80% entrenamiento, 20% test)
+    # 5. Split de datos (80/20)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
 
-    # 7. Entrenar
+    # 6. Entrenamiento
     pipeline.fit(X_train, y_train)
 
-    # 8. Métricas
+    # 7. Evaluación
     y_pred = pipeline.predict(X_test)
     
     metrics = {
