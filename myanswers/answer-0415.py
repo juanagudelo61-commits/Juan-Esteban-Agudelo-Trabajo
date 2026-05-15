@@ -10,19 +10,18 @@ from sklearn.metrics import accuracy_score, f1_score, classification_report
 
 def entrenar_clasificador_clientes(df, target_col, columnas_features=None):
     """
-    Versión dinámica: Usa 'target_col' directamente del argumento 
-    en lugar de escribir "segmento" como texto.
+    Versión 100% dinámica. No usa nombres de columnas fijos.
     """
-    # 1. Separar X e y usando la variable dinámica target_col
-    # Esto evita el error "not found in axis"
+    # 1. Separar X e y usando la variable que nos pasa el profesor
+    # Esto evita que falle si la columna no se llama 'segmento'
     X = df.drop(columns=[target_col])
     y = df[target_col]
 
-    # 2. Identificar columnas por tipo automáticamente
+    # 2. Identificar columnas por tipo de forma automática
     numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
     categorical_cols = X.select_dtypes(include=["object"]).columns.tolist()
 
-    # 3. Transformadores (Pipeline + ColumnTransformer)
+    # 3. Configurar Transformadores (Pipeline + ColumnTransformer)
     numeric_transformer = Pipeline(steps=[
         ("imputer", SimpleImputer(strategy="mean")),
         ("scaler", StandardScaler())
