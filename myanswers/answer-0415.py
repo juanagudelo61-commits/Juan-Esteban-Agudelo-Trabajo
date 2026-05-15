@@ -16,23 +16,31 @@ def entrenar_clasificador_clientes(
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.metrics import accuracy_score, f1_score, classification_report
 
-    # Si no mandan target_col, usar la última columna
-    if target_col is None:
+    # Verificar target_col
+    if target_col is None or target_col not in df.columns:
         target_col = df.columns[-1]
 
-    # Variables predictoras y objetivo
+    # Separar X e y
     X = df.drop(columns=[target_col])
     y = df[target_col]
 
-    # Si envían columnas_features
+    # Seleccionar columnas específicas si las envían
     if columnas_features is not None:
-        X = X[columnas_features]
+        columnas_validas = [
+            c for c in columnas_features
+            if c in X.columns
+        ]
 
-    # Columnas numéricas y categóricas
-    numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+        if len(columnas_validas) > 0:
+            X = X[columnas_validas]
+
+    # Detectar columnas
+    numeric_cols = X.select_dtypes(
+        include=[np.number]
+    ).columns.tolist()
 
     categorical_cols = X.select_dtypes(
-        include=['object', 'category']
+        include=["object", "category"]
     ).columns.tolist()
 
     # Pipeline numérico
@@ -53,13 +61,13 @@ def entrenar_clasificador_clientes(
         ("cat", categorical_transformer, categorical_cols)
     ])
 
-    # Modelo final
+    # Pipeline final
     pipeline = Pipeline(steps=[
         ("preprocessor", preprocessor),
         ("classifier", RandomForestClassifier(random_state=42))
     ])
 
-    # División entrenamiento/prueba
+    # División de datos
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
