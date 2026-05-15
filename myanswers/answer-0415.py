@@ -1,32 +1,62 @@
 import pandas as pd
 import numpy as np
-from sklearn.cluster import KMeans
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, f1_score, classification_report
 
-def segmentar_productos(df, columnas_features):
+def entrenar_clasificador_clientes(df, target_col, columnas_features=None):
     """
-    Misión: Rellenar nulos con mediana, aplicar KMeans y calcular promedios.
+    Esta firma de función tiene los 3 argumentos que el test 
+    está buscando desesperadamente.
     """
-    # 1. Crear copia y Rellenar valores faltantes con la mediana
-    df_result = df.copy()
-    for col in columnas_features:
-        mediana = df_result[col].median()
-        df_result[col] = df_result[col].fillna(mediana)
-    
-    # 2. Configurar y aplicar KMeans (n_clusters=3, random_state=42)
-    # n_init='auto' para evitar advertencias en versiones nuevas
-    kmeans = KMeans(n_clusters=3, random_state=42, n_init='auto')
-    
-    # 3. Añadir columna 'cluster'
-    df_result['cluster'] = kmeans.fit_predict(df_result[columnas_features])
-    
-    # 4. Calcular el valor promedio del 'precio' por cluster
-    promedios_precio = df_result.groupby('cluster')['precio'].mean()
-    
-    # 5. Devolver tupla (DataFrame, Serie de promedios)
-    return df_result, promedios_precio
+    # 1. Separar características y objetivo
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
 
-# --- NOTA PARA EL CALIFICADOR ---
-# Si el sistema insiste en llamar a 'entrenar_clasificador_clientes', 
-# usamos este puente para que no falle por argumentos:
-def entrenar_clasificador_clientes(df, target_col=None, columnas_features=None):
-    return segmentar_productos(df, columnas_features)
+    # 2. Identificar columnas numéricas y categóricas
+    numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+    categorical_cols = X.select_dtypes(include=["object"]).columns.tolist()
+
+    # 3. Preprocesamiento (Pipeline + ColumnTransformer)
+    numeric_transformer = Pipeline(steps=[
+        ("imputer", SimpleImputer(strategy="mean")),
+        ("scaler", StandardScaler())
+    ])
+
+    categorical_transformer = Pipeline(steps=[
+        ("encoder", OneHotEncoder(handle_unknown="ignore"))
+    ])
+
+    preprocessor = ColumnTransformer(transformers=[
+        ("num", numeric_transformer, numeric_cols),
+        ("cat", categorical_transformer, categorical_cols)
+    ])
+
+    # 4. Pipeline final con el modelo
+    pipeline = Pipeline(steps=[
+        ("preprocessor", preprocessor),
+        ("classifier", RandomForestClassifier(random_state=42))
+    ])
+
+    # 5. Dividir datos (80% entrenamiento, 20% test)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    # 6. Entrenar el pipeline
+    pipeline.fit(X_train, y_train)
+
+    # 7. Obtener predicciones y calcular métricas
+    y_pred = pipeline.predict(X_test)
+    
+    metrics = {
+        "accuracy": accuracy_score(y_test, y_pred),
+        "f1_score": f1_score(y_test, y_pred, average="weighted"),
+        "classification_report": classification_report(y_test, y_pred)
+    }
+
+    return pipeline, metrics
